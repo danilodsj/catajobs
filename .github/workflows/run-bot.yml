@@ -1,0 +1,133 @@
+# Run the LinkedIn auto job applier bot on a GitHub-hosted runner.
+#
+# WARNING: This bot automates logging in to LinkedIn and submitting job
+# applications. Doing so is against LinkedIn's Terms of Service and can result
+# in account restriction or a ban. Running it from GitHub Actions' shared
+# runners increases that risk further, since datacenter IP ranges are more
+# likely to be flagged as automation than a residential IP. Only dispatch
+# this workflow if you understand and accept that risk.
+#
+# Before running:
+#   1. Edit and commit config/personals.py, config/search.py, config/questions.py
+#      and config/resume.py in your fork with your real (non-secret)
+#      preferences. This workflow does NOT touch those files.
+#   2. Configure the following repository secrets (Settings > Secrets and
+#      variables > Actions):
+#        - LINKEDIN_USERNAME   (required)
+#        - LINKEDIN_PASSWORD   (required)
+#        - RESUME_BASE64       (required, base64 of your resume PDF,
+#                                e.g. `base64 -w0 resume.pdf`)
+#        - LLM_API_KEY         (optional, only needed if you enable AI below)
+#   3. Dispatch this workflow manually from the Actions tab.
+
+name: Run LinkedIn Auto Job Applier
+
+on:
+  workflow_dispatch:
+    inputs:
+      enable_ai:
+        description: "Enable AI-assisted question answering (use_AI)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install undetected-chromedriver selenium pyautogui setuptools openai flask-cors flask
+
+      - name: Decode resume from secret
+        env:
+          RESUME_BASE64: ${{ secrets.RESUME_BASE64 }}
+        run: |
+          mkdir -p "all resumes/default"
+          printf '%s' "$RESUME_BASE64" | base64 --decode > "all resumes/default/resume.pdf"
+          test -s "all resumes/default/resume.pdf" || { echo "::error::Resume decode failed or secret RESUME_BASE64 not set"; exit 1; }
+
+      - name: Inject secrets into config/secrets.py
+        env:
+          LINKEDIN_USERNAME: ${{ secrets.LINKEDIN_USERNAME }}
+          LINKEDIN_PASSWORD: ${{ secrets.LINKEDIN_PASSWORD }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          ENABLE_AI: ${{ github.event.inputs.enable_ai }}
+        run: |
+          python - <<'PYEOF'
+          import os, re, pathlib
+
+          p = pathlib.Path("config/secrets.py")
+          text = p.read_text()
+
+          text = re.sub(r'^username = .*$', f'username = "{os.environ["LINKEDIN_USERNAME"]}"', text, count=1, flags=re.M)
+          text = re.sub(r'^password = .*$', f'password = "{os.environ["LINKEDIN_PASSWORD"]}"', text, count=1, flags=re.M)
+
+          llm_key = os.environ.get("LLM_API_KEY", "")
+          if llm_key:
+              text = re.sub(r'^llm_api_key = .*$', f'llm_api_key = "{llm_key}"', text, count=1, flags=re.M)
+
+          enable_ai = os.environ.get("ENABLE_AI") == "true"
+          if enable_ai:
+              text = re.sub(r'^use_AI = .*$', 'use_AI = True', text, count=1, flags=re.M)
+              if not llm_key:
+                  print("::warning::enable_ai was set but LLM_API_KEY secret is empty; AI calls will likely fail unless llm_api_url points to a local model.")
+
+          p.write_text(text)
+          PYEOF
+
+      - name: Force headless mode in config/settings.py
+        run: |
+          python - <<'PYEOF'
+          import re, pathlib
+
+          p = pathlib.Path("config/settings.py")
+          text = p.read_text()
+          text = re.sub(
+              r'^run_in_background = .*$',
+              'run_in_background = True           # Forced True by CI workflow for headless run',
+              text, count=1, flags=re.M,
+          )
+          p.write_text(text)
+          PYEOF
+
+      - name: Validate config
+        run: python -c "from modules.validator import validate_config; validate_config()"
+
+      - name: Run bot
+        run: xvfb-run -a python runAiBot.py
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bot-logs
+          path: logs/
+          if-no-files-found: ignore
+
+      - name: Upload application history
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-history-csv
+          path: |
+            all excels/all_applied_applications_history.csv
+            all excels/all_failed_applications_history.csv
+          if-no-files-found: ignore
