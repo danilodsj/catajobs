@@ -1,0 +1,18 @@
+.venv/
+dados/
+saida/
+logs/
+modelos/
+dashboard.html
+.playwright-mcp/
+__pycache__/
+config/perfil.yaml
+config/segredos.yaml
+config/backups/
+config/voz.md
+*.tmp
+# arquivos pessoais e capturas soltas na raiz
+*.pdf
+*.png
+review.yml
+snap.yml

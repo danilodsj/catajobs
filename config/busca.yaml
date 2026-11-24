@@ -1,0 +1,178 @@
+# Termos buscados em todas as fontes (Gupy e LinkedIn).
+termos:
+  - analista de marketing senior
+  - analista de dados senior
+  - analista de growth senior
+  - analista de crm senior
+  - analista de midia senior
+  - analista de performance senior
+  - analista de business intelligence senior
+  - analista de inteligencia de mercado senior
+  - especialista em marketing
+  - especialista em dados
+  - especialista em inteligencia artificial
+  - especialista em growth
+  - coordenador de marketing
+  - coordenador de marketing digital
+  - coordenador de dados
+  - coordenador de growth
+  - coordenador de crm
+  - coordenador de bi
+  - gerente de marketing
+  - gerente de dados
+  - head de marketing
+  - head de dados
+  - product manager marketing
+  - product manager dados
+  - product manager inteligencia artificial
+  - product manager ai
+  - product manager growth
+  - gerente de produto dados
+  - senior marketing analyst
+  - senior data analyst
+  - marketing manager
+  - growth manager
+  - ai product manager
+  - data product manager
+  - analytics manager
+
+# Termos curtos para varrer as fontes brasileiras sem filtro de nível (Gupy, Remotar, vagas.com).
+# O filtro de título e a IA separam o que é sênior e da área. Não entram no LinkedIn, para não aumentar o bloqueio.
+termos_amplos:
+  - marketing
+  - marketing digital
+  - dados
+  - analytics
+  - business intelligence
+  - growth
+  - crm
+  - midia
+  - performance
+  - inteligencia artificial
+  - inteligencia de mercado
+  - martech
+  - ecommerce
+  - produto
+
+# Localização
+localizacao:
+  linkedin_geo_id: "106057199"   # Brasil
+  # Cidades aceitas para vagas híbridas ou presenciais. Lista vazia = aceita qualquer cidade.
+  # No Rio: remoto, híbrido ou presencial. Fora do Rio: só remoto.
+  cidades_presencial_hibrido: ["Rio de Janeiro"]
+  aceita_remoto: true
+
+fontes:
+  gupy: true
+  linkedin: true
+  linkedin_paginas_por_termo: 6          # 10 vagas por página
+  linkedin_detalhes_por_execucao: 150    # descrições buscadas por execução (o LinkedIn limita a taxa)
+  linkedin_janela_horas_primeira_execucao: 168   # 7 dias
+  linkedin_janela_horas_diaria: 36
+  gupy_dias_maximos_publicacao: 21
+  remotar: true                          # agregador de vagas remotas e híbridas no Brasil
+  vagascom: true
+  vagascom_detalhes_por_execucao: 150
+  # Quadros de vagas remotas internacionais. Só entram vagas abertas a Brasil, LATAM, Américas ou mundo.
+  remotas_internacionais:
+    ativo: true
+    termos: [marketing manager, growth marketing, marketing analytics, data analyst, analytics manager,
+             crm manager, lifecycle marketing, performance marketing, ai product manager, data product manager]
+    tags: [marketing, analytics, data, growth]
+  greenhouse: [quintoandar, ebanx, wildlifestudios, stone, vtex, c6bank, rdstation, gympass, blip, inter, xpinc, btgpactual,
+               jusbrasil, payoneer, agibank, cabify, gitlab, cortex]
+  lever: [kavak, starkbank, yuno]
+  ashby: [nubank, neon, globo, swap, belvo]
+  # Google Vagas pela SerpApi (chave em config/segredos.yaml). Plano gratuito: 250 buscas/mês, 10 vagas por busca.
+  # Cada execução usa até `buscas_por_execucao`, dividindo a cota restante pelos dias do mês. As consultas giram.
+  google_vagas:
+    ativo: true
+    buscas_por_execucao: 8
+    reserva: 10
+    consultas:
+      - {q: "coordenador de marketing", local: "Rio de Janeiro, State of Rio de Janeiro, Brazil"}
+      - {q: "analista de marketing sênior", remoto: true}
+      - {q: "analista de dados sênior", local: "Rio de Janeiro, State of Rio de Janeiro, Brazil"}
+      - {q: "especialista em inteligência artificial", remoto: true}
+      - {q: "gerente de marketing", local: "Rio de Janeiro, State of Rio de Janeiro, Brazil"}
+      - {q: "analista de growth sênior", remoto: true}
+      - {q: "especialista em dados", local: "Rio de Janeiro, State of Rio de Janeiro, Brazil"}
+      - {q: "coordenador de dados", remoto: true}
+      - {q: "analista de crm sênior", remoto: true}
+      - {q: "head de marketing", local: "Rio de Janeiro, State of Rio de Janeiro, Brazil"}
+      - {q: "analista de mídia paga sênior", remoto: true}
+      - {q: "product manager dados ou IA", remoto: true}
+      - {q: "analista de business intelligence sênior", local: "Rio de Janeiro, State of Rio de Janeiro, Brazil"}
+      - {q: "coordenador de marketing", remoto: true}
+      - {q: "especialista em growth", remoto: true}
+      - {q: "analista de performance sênior", local: "Rio de Janeiro, State of Rio de Janeiro, Brazil"}
+      - {q: "gerente de dados", remoto: true}
+      - {q: "analista de inteligência de mercado sênior", local: "Rio de Janeiro, State of Rio de Janeiro, Brazil"}
+      - {q: "especialista em marketing", remoto: true}
+      - {q: "senior marketing analyst", remoto: true}
+
+filtros:
+  # Avaliação por IA: nota mínima (0 a 100) para considerar fit e se candidatar.
+  nota_minima_fit: 65
+  # Palavras no título que eliminam a vaga direto (sem gastar IA).
+  titulo_excluir:
+    - junior
+    - júnior
+    - jr
+    - pleno
+    - estagio
+    - estágio
+    - estagiario
+    - estagiário
+    - trainee
+    - aprendiz
+    - assistente
+    - auxiliar
+    - vendedor
+    - vendedora
+    - representante comercial
+    - sdr
+    - bdr
+    - desenvolvedor
+    - desenvolvedora
+    - developer
+    - engenheiro
+    - engenheira
+    - engineer
+    - engenharia
+    - sre
+    - reliability
+    - talent acquisition
+    - customer success
+    - inside sales
+    - sales assistant
+    - auditoria
+    # tipos de vaga que você não quer
+    - seo
+    - geo
+    - generative engine optimization
+    - search engine optimization
+    # vagas afirmativas exclusivas (remova se for elegível)
+    - pcd
+    - pessoa com deficiencia
+    - pessoas com deficiencia
+    - women applicants only
+    - exclusiva para mulheres
+    - motorista
+    - operador
+    - tecnico
+    - técnico
+
+limites:
+  avaliacoes_por_lote: 12
+  aplicacoes_por_dia: 40
+  tempo_maximo_por_aplicacao_min: 15
+  max_turnos_agente_aplicacao: 90
+
+modelos_ia:
+  avaliacao: sonnet
+  personalizacao: sonnet
+  aplicacao: sonnet
+
+navegador:
+  headless: false   # navegador visível reduz bloqueios anti-bot
