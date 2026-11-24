@@ -44,7 +44,9 @@ def rodar(prompt: str, schema: dict, modelo: str = "sonnet", *, mcp_config: Path
     except subprocess.TimeoutExpired as e:
         raise ErroIA(f"tempo esgotado ({timeout_s}s)") from e
     if log_nome:
-        (LOGS / f"{log_nome}.json").write_text(p.stdout or p.stderr, encoding="utf-8")
+        # o nome vem do id da vaga (dado externo): só letras, números, _ e -, sempre dentro de logs/
+        seguro = re.sub(r"[^A-Za-z0-9_-]", "_", log_nome)[:150] or "log"
+        (LOGS / f"{seguro}.json").write_text(p.stdout or p.stderr, encoding="utf-8")
     if not p.stdout.strip():
         raise ErroIA(f"claude saiu com código {p.returncode}: {p.stderr[:500]}")
     try:

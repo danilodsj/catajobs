@@ -496,7 +496,7 @@ def aplicar_vaga(v: dict, simular: bool = False) -> tuple[dict, float]:
     return ia.rodar(p, SCHEMA_APLICACAO, cfg["modelos_ia"]["aplicacao"], mcp_config=_mcp_config(),
                     ferramentas=["mcp__playwright"], max_turnos=lim["max_turnos_agente_aplicacao"],
                     timeout_s=lim["tempo_maximo_por_aplicacao_min"] * 60,
-                    log_nome=f"aplicacao_{v['id'].replace(':', '_')}")
+                    log_nome=f"aplicacao_{v['id']}")
 
 
 def aplicar(limite: int | None = None, ids: list[str] | None = None, simular: bool = False) -> dict:

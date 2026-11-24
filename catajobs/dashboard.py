@@ -108,6 +108,9 @@ details summary{cursor:pointer;color:var(--a);font-size:12px}details p{white-spa
 </div>
 <script>
 const V=__DADOS__, EX=__EXEC__;
+const esc=s=>(s??"").toString().replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// links só http(s) ou caminho relativo (CV em saida/); bloqueia javascript:, data: etc.
+const url=s=>{s=(s??"").toString().trim();return /^https?:\/\//i.test(s)||(s&&!/^[^\/?#]*:/.test(s))?esc(s):"#"};
 const ROT={encontrada:"Encontrada",descartada_regra:"Descartada (regra)",triagem:"Em triagem",sem_fit:"Sem fit",fit:"Com fit",personalizada:"CV pronto",aplicada:"Inscrita",precisa_humano:"Precisa de você",falhou:"Falhou",encerrada:"Encerrada",nao_elegivel:"Não elegível",ignorada:"Excluída por você",duplicada:"Duplicada"};
 const n=x=>x.toLocaleString("pt-BR"), pct=(a,b)=>b?(100*a/b).toLocaleString("pt-BR",{maximumFractionDigits:1})+"%":"0%";
 const hoje=new Date().toISOString().slice(0,10);
@@ -122,19 +125,19 @@ document.getElementById("kpis").innerHTML=[
  ["Precisam de você",n(hum),"login, captcha ou cadastro"],["Uso de IA",("US$ "+custo.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})),"equivalente API, sem cobrança (licença Claude)"]
 ].map(([l,v,s])=>`<div class="k"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
 // precisa de você
-(function(){const esc=s=>(s??"").toString().replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+(function(){
 const H=V.filter(v=>v.s==="precisa_humano");const box=document.getElementById("acoes");
 if(!H.length){box.style.display="none";return}
 document.getElementById("acoes-lista").innerHTML=H.map(v=>`<div class="acao"><b>${esc(v.t)}</b><span class="mut">${esc(v.e)} · ${esc(v.l)}</span>
 <p style="margin:8px 0 0;font-size:13px">${esc(v.o)}</p>
-<div class="btns"><a class="pri" href="${esc(v.ua||v.u)}" target="_blank" rel="noopener">Abrir formulário</a><a href="${esc(v.u)}" target="_blank" rel="noopener">Ver vaga</a>${v.cv?`<a href="${esc(v.cv)}" target="_blank">CV personalizado</a>`:""}</div>
+<div class="btns"><a class="pri" href="${url(v.ua||v.u)}" target="_blank" rel="noopener">Abrir formulário</a><a href="${url(v.u)}" target="_blank" rel="noopener">Ver vaga</a>${v.cv?`<a href="${url(v.cv)}" target="_blank">CV personalizado</a>`:""}</div>
 ${v.c?`<details><summary>Carta</summary><p>${esc(v.c)}</p></details>`:""}</div>`).join("")})();
 // funil
 const F=[["Encontradas",tot],["Filtradas",tri],["Com fit",fit],["CV personalizado",V.filter(v=>["personalizada","aplicada","precisa_humano","falhou"].includes(v.s)).length],["Inscritas",apl]];
 document.getElementById("funil").innerHTML=F.map(([l,x])=>`<div><span class="lb">${l}</span><span class="bar" style="width:${tot?Math.max(2,180*x/tot):2}px"></span><span class="nv">${n(x)}</span></div>`).join("");
 // fontes
 const fs={};V.forEach(v=>{const o=fs[v.f]??={e:0,f:0,a:0};o.e++;if(FIT.has(v.s))o.f++;if(v.s==="aplicada")o.a++;});
-document.getElementById("fontes").innerHTML="<tr><th>Fonte</th><th class=num>Encontr.</th><th class=num>Fit</th><th class=num>Inscr.</th></tr>"+Object.entries(fs).sort((a,b)=>b[1].e-a[1].e).map(([k,o])=>`<tr><td>${k}</td><td class=num>${n(o.e)}</td><td class=num>${n(o.f)}</td><td class=num>${n(o.a)}</td></tr>`).join("");
+document.getElementById("fontes").innerHTML="<tr><th>Fonte</th><th class=num>Encontr.</th><th class=num>Fit</th><th class=num>Inscr.</th></tr>"+Object.entries(fs).sort((a,b)=>b[1].e-a[1].e).map(([k,o])=>`<tr><td>${esc(k)}</td><td class=num>${n(o.e)}</td><td class=num>${n(o.f)}</td><td class=num>${n(o.a)}</td></tr>`).join("");
 // por dia
 // barras = encontradas (eixo esquerdo); linha = inscritas (eixo direito, escala própria para não sumir perto do zero)
 (function(){const svg=document.getElementById("dias"),W=svg.clientWidth||700,H=200,p={l:34,r:30,t:20,b:24};const dias=[];
@@ -150,17 +153,17 @@ dias.forEach((d,i)=>{if(i%5===4||i===29)g+=`<text x="${p.l+i*bw+bw/2}" y="${H-6}
 // tabela
 const sel=document.getElementById("fs"),sf=document.getElementById("ff");
 Object.entries(ROT).forEach(([k,l])=>sel.insertAdjacentHTML("beforeend",`<option value="${k}">${l}</option>`));
-[...new Set(V.map(v=>v.f))].forEach(f=>sf.insertAdjacentHTML("beforeend",`<option>${f}</option>`));
-let ord={k:"d",dir:-1};const esc=s=>(s??"").toString().replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+[...new Set(V.map(v=>v.f))].forEach(f=>sf.insertAdjacentHTML("beforeend",`<option>${esc(f)}</option>`));
+let ord={k:"d",dir:-1};
 function render(){const q=document.getElementById("q").value.toLowerCase(),st=sel.value,fo=sf.value;
  let r=V.filter(v=>(st==="relevantes"?FIT.has(v.s):!st||v.s===st)&&(!fo||v.f===fo)&&(!q||[v.t,v.e,v.mf,v.o].join(" ").toLowerCase().includes(q)));
  r.sort((a,b)=>((a[ord.k]??"")>(b[ord.k]??"")?1:-1)*ord.dir);
  document.querySelector("#tab tbody").innerHTML=r.slice(0,1500).map(v=>`<tr>
-  <td>${v.d}${v.da?`<div class=mut>inscr. ${v.da}</div>`:""}</td>
-  <td><a href="${esc(v.u)}" target="_blank" rel="noopener">${esc(v.t)}</a><div class=mut>${esc(v.e)} · ${esc(v.l)}${v.m?" · "+v.m:""}</div></td>
-  <td>${v.f}<div class=mut>${v.ap||""}</div></td><td class=num>${v.n??""}</td>
-  <td><span class="tag st-${v.s}">${ROT[v.s]||v.s}</span></td>
-  <td>${v.cv?`<a href="${esc(v.cv)}" target="_blank">CV</a>`:""}</td>
+  <td>${esc(v.d)}${v.da?`<div class=mut>inscr. ${esc(v.da)}</div>`:""}</td>
+  <td><a href="${url(v.u)}" target="_blank" rel="noopener">${esc(v.t)}</a><div class=mut>${esc(v.e)} · ${esc(v.l)}${v.m?" · "+esc(v.m):""}</div></td>
+  <td>${esc(v.f)}<div class=mut>${esc(v.ap)}</div></td><td class=num>${esc(v.n)}</td>
+  <td><span class="tag st-${esc(v.s)}">${ROT[v.s]||esc(v.s)}</span></td>
+  <td>${v.cv?`<a href="${url(v.cv)}" target="_blank">CV</a>`:""}</td>
   <td><div class=motivo>${esc(v.o||v.mf||"")}</div>${v.c?`<details><summary>Carta</summary><p>${esc(v.c)}</p></details>`:""}</td></tr>`).join("");
  document.getElementById("cont").textContent=`${n(r.length)} vagas na lista`}
 document.querySelectorAll("th[data-k]").forEach(th=>th.onclick=()=>{ord={k:th.dataset.k,dir:ord.k===th.dataset.k?-ord.dir:-1};render()});
